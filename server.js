@@ -1,9 +1,9 @@
-import express from "express"
-import nodemailer from "nodemailer"
-import cors from "cors"
-import dotenv from "dotenv"
+import express from "express";
+import nodemailer from "nodemailer";
+import cors from "cors";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -11,8 +11,21 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 app.post("/api/contact", (req, res) => {
   const { nom, email, numero, message, cible } = req.body;
+
+  if (!nom || !email || !numero || !message || !cible) {
+    return res.status(400).json({ message: "Tous les champs sont requis." });
+  }
+
 
   const destination =
     cible === "parapharmacie"
@@ -39,7 +52,6 @@ app.post("/api/contact", (req, res) => {
     res.status(200).json({ message: "Message envoyé avec succès" });
   });
 });
-
 
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);

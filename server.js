@@ -11,32 +11,35 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-app.post("/api/contact", async (req, res) => {
-  const { nom, email, numero, message } = req.body;
+app.post("/api/contact", (req, res) => {
+  const { nom, email, numero, message, cible } = req.body;
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  const destination =
+    cible === "parapharmacie"
+      ? process.env.TO_EMAIL_PARA
+      : process.env.TO_EMAIL_PHARMA;
 
   const mailOptions = {
-    from: email,
-    to: process.env.TO_EMAIL,
-    subject: `Nouveau message de ${nom} depuis le site de la nouvelle pharmacie mpouto`,
-    text: `Nom : ${nom}\nEmail : ${email}\nTéléphone : ${numero}\n\nMessage :\n${message}`,
+    from: process.env.EMAIL_USER,
+    to: destination,
+    subject: `Nouveau message de Mr ${nom}`,
+    text: `
+      Nom: ${nom}
+      Email: ${email}
+      Numéro: ${numero}
+      Message: ${message}
+    `,
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Message envoyé !" });
-  } catch (err) {
-    console.error("Erreur:", err);
-    res.status(500).json({ message: "Erreur lors de l’envoi" });
-  }
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Erreur d'envoi", error);
+      return res.status(500).json({ message: "Erreur serveur" });
+    }
+    res.status(200).json({ message: "Message envoyé avec succès" });
+  });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);
